@@ -1,0 +1,164 @@
+import { NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import sharp from 'sharp'
+import { mkdir, writeFile } from 'fs/promises'
+import path from 'path'
+
+export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await auth()
+    if (!session) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    const { id } = await params
+
+    const project = await prisma.project.findFirst({ where: { id, userId: session.user.id, deletedAt: null } })
+    if (!project) return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 })
+
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
+    }
+    
+    // Allow admin users to bypass credit checks
+    const isAdmin = user.role === 'admin'
+    if (!isAdmin && user.creditBalance < 1) {
+      return NextResponse.json({ success: false, error: 'Insufficient credits' }, { status: 402 })
+    }
+
+    const activeJob = await prisma.generationJob.findFirst({
+      where: { projectId: id, status: { in: ['pending', 'processing'] } },
+    })
+    if (activeJob) {
+      return NextResponse.json({ success: false, error: 'A generation is already in progress' }, { status: 409 })
+    }
+
+    // Create job and decrement credits (only for non-admin users)
+    const transactionOps: any[] = [
+      prisma.generationJob.create({ data: { projectId: id, userId: session.user.id, status: 'processing', startedAt: new Date() } }),
+    ]
+    
+    if (!isAdmin) {
+      transactionOps.push(
+        prisma.user.update({ where: { id: session.user.id }, data: { creditBalance: { decrement: 1 } } })
+      )
+    }
+    
+    const [job] = await prisma.$transaction(transactionOps) as any
+
+    // Process inline
+    processJob(job.id, id, project).catch(async (err) => {
+      console.error('Generation failed:', err)
+      await prisma.generationJob.update({ where: { id: job.id }, data: { status: 'failed', errorMessage: String(err?.message ?? err) } }).catch(() => {})
+    })
+
+    return NextResponse.json({ success: true, data: { jobId: job.id } }, { status: 201 })
+  } catch (err) {
+    console.error('Generate error:', err)
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function processJob(jobId: string, projectId: string, project: any) {
+  const { name: appName, description, platforms, stylePreset, brandColor, templateId } = project
+  const { DEVICE_SIZES } = await import('@/lib/device-sizes')
+
+  // Load template config if set, otherwise fall back to stylePreset
+  let bgColor: string, textColor: string, bgGradientEnd: string | null = null, frameVisible = true, frameRadius = 24, frameBg = '#00000020'
+  if (templateId) {
+    const template = await prisma.template.findUnique({ where: { id: templateId } })
+    if (template) {
+      const cfg = JSON.parse(template.config)
+      bgColor = brandColor ?? cfg.bgColor
+      bgGradientEnd = cfg.bgGradientEnd ?? null
+      textColor = cfg.textColor
+      frameVisible = cfg.frameVisible ?? true
+      frameRadius = cfg.frameRadius ?? 24
+      frameBg = cfg.frameBg ?? '#00000020'
+    } else {
+      bgColor = brandColor ?? '#f5f5f5'
+      textColor = '#171717'
+    }
+  } else {
+    bgColor = brandColor ?? (stylePreset === 'dark' ? '#171717' : stylePreset === 'gradient' ? '#007cf0' : stylePreset === 'vibrant' ? '#ff0080' : '#f5f5f5')
+    textColor = stylePreset === 'minimal' ? '#171717' : '#ffffff'
+  }
+
+  const screenshotCount = 3
+
+  const captions = Array.from({ length: screenshotCount }, (_, i) => ({
+    headline: `${appName} Feature ${i + 1}`,
+    subtext: description.slice(0, 80),
+  }))
+
+  if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.startsWith('sk-...')) {
+    try {
+      const { generateCaptions } = await import('@/lib/openai')
+      for (let i = 0; i < screenshotCount; i++) {
+        captions[i] = await generateCaptions(appName, description, i, screenshotCount)
+      }
+    } catch { /* use fallback captions */ }
+  }
+
+  const outputDir = path.join(process.cwd(), 'public', 'generated', jobId)
+
+  for (const platform of platforms) {
+    const sizes = DEVICE_SIZES[platform as keyof typeof DEVICE_SIZES]
+
+    for (const [sizeKey, sizeInfo] of Object.entries(sizes)) {
+      const { width, height } = sizeInfo
+      const dir = path.join(outputDir, 'screenshots', platform, sizeKey)
+      await mkdir(dir, { recursive: true })
+
+      // Scale font sizes relative to width
+      const headlineSize = Math.round(width * 0.036)
+      const subtextSize = Math.round(width * 0.023)
+
+      for (let i = 0; i < screenshotCount; i++) {
+        const headline = captions[i].headline
+        const subtext = captions[i].subtext
+
+        const gradId = `bg_${sizeKey}_${i}`
+        const textSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+          ${bgGradientEnd
+            ? `<defs><linearGradient id="${gradId}" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="${bgColor}"/><stop offset="100%" stop-color="${bgGradientEnd}"/></linearGradient></defs><rect width="${width}" height="${height}" fill="url(#${gradId})"/>`
+            : `<rect width="${width}" height="${height}" fill="${bgColor}"/>`}
+          <text x="${width / 2}" y="${height * 0.08}" text-anchor="middle" font-family="sans-serif" font-size="${headlineSize}" font-weight="bold" fill="${textColor}">${escapeXml(headline)}</text>
+          <text x="${width / 2}" y="${height * 0.12}" text-anchor="middle" font-family="sans-serif" font-size="${subtextSize}" fill="${textColor}" opacity="0.8">${escapeXml(subtext)}</text>
+          ${frameVisible ? `<rect x="${width * 0.1}" y="${height * 0.18}" width="${width * 0.8}" height="${height * 0.75}" rx="${frameRadius}" fill="${frameBg}"/>` : ''}
+        </svg>`
+
+        const buf = await sharp(Buffer.from(textSvg)).png().toBuffer()
+        const filename = `${sizeKey}_screenshot_${String(i + 1).padStart(2, '0')}_${width}x${height}.png`
+        await writeFile(path.join(dir, filename), buf)
+
+        const storageKey = `/generated/${jobId}/screenshots/${platform}/${sizeKey}/${filename}`
+        await prisma.generatedAsset.create({
+          data: {
+            jobId,
+            assetType: platform === 'ios' ? 'screenshot_ios' : 'screenshot_android',
+            platform,
+            deviceSize: sizeKey,
+            index: i,
+            sortOrder: i,
+            captionHeadline: headline,
+            captionSubtext: subtext,
+            storageKey,
+            width,
+            height,
+            fileSizeBytes: buf.length,
+          },
+        })
+      }
+    }
+  }
+
+  await prisma.generationJob.update({
+    where: { id: jobId },
+    data: { status: 'completed', completedAt: new Date(), expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) },
+  })
+}
+
+function escapeXml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}

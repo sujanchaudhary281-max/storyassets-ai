@@ -1,0 +1,37 @@
+Here are my commands to improve my projects: 
+
+- While creating the new project in the first page, Remove one line description and full descripton, and 
+put only descriptions. (5000 words)
+- Add also extra field App icon in the appropriate location. It is optional but recommended.(It will be also added to project details as well)
+- In the project's detail section remove header's languages, template and generate assets I do not need that
+I need Copy this project section which will fill all this projects details to new projects all form and 
+active step will be 1. User can click next next next and edit which is required and lastly submit. 
+- Age group also required for asking the which age group is for this app, So this will be also extra field in 
+project creations. Edit proect details also accordingly. 
+- In the project details section, their is generation history, instead this put generated assets and in the download
+section, I want options of downloading zip , pngs, jpeg etc. They can also selection which one to download and which not in the bulk. 
+Required size of the screenshots should be like appstore and play store demands. 
+- In the indivisual download section as well, they can select, png or jpeg to download indivisual. 
+- Global history should be created which will capture all the activites like when new project is created, 
+when any activities are done. It will also have feature of search and filters with times and others. 
+- Updating the user profile image is not working so fix it as well. 
+- When viewing the screenshot , user can view modal of the screen with bigger image in modal right like a modal. They can also close it. 
+Choose yourself method how to show modal , by clicking the image or other methods. 
+- Their should be draft feature as well when creating new projects, after few seconds it should be saved to draft. 
+So drafts projects also is a new feature you can say it. While creating new project they will have button at last as draft as well to put in draft but 
+by automatically we are saving it into the draft. Even though they leave in the middle of the project creation we are already doing it though show draft button at last before generating. 
+- Add delete options for the project and indivisual screenshots as well. But they will stay in trash feature(new feature I think), They can restore it from their, 
+but if they do not restore it will be deleted automatically after 30 days. 
+- When user is editing the individual image their should be undo and redo options as well. 
+- Individual screenshots can be duplicated as well so that one remain as it is and another they can edit. Or better solution if you have you can implement that. 
+- In the dashboard and the projects page, their are many projects right, so their should be feature of the search and filters for them. 
+In the dashboard you can put search and filter just right side of the recent projects. and rename recent projects to filtered projects. Like All projects new project etc.
+- Also add download indicator when clicked the download. Also show loading(loading is consistent to all loading buttons in my project, you can view it) to the login button in the login page. 
+-  Also error handling should be very specific and accurate all over the app. 
+- Also show the credits when they are editing individual screenshots or genrating project it should be very user experience. 
+- I do not want to make my app completely free not even trial free. So manage it yourself. From starting user should initially pay then use it. But as 
+a developer I need to check everything right, for that give me access unlimitedly by any way if you have. 
+- So manage pricing yourself and change all the way from landing page to the dashbaord and billings.
+- In the billing section I was getting error, that should be also fixed. 
+- Also change the gradient in different page like it has made in login page's right section. That background gradient I did not liked it. 
+- Lastly tell me what shoudl I replace like replacing google auth things, db things and other apis things if required. Whatever I need to do , just tell me in the md format and give me md name okay. 

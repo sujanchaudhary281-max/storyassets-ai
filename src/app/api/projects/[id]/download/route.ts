@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const runtime = "nodejs";
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getPublicUrl } from '@/lib/r2'
@@ -52,7 +53,7 @@ export async function GET(
     // If format is zip, create archive
     if (format === 'zip') {
       const archive = archiver('zip', { zlib: { level: 9 } })
-      
+
       // Create readable stream for response
       const stream = new ReadableStream({
         start(controller) {
@@ -83,7 +84,7 @@ export async function GET(
 
     // For single format (PNG/JPEG), download all as individual files in zip
     const archive = archiver('zip', { zlib: { level: 9 } })
-    
+
     const stream = new ReadableStream({
       start(controller) {
         archive.on('data', (chunk: any) => controller.enqueue(chunk))

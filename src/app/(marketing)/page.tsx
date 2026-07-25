@@ -8,13 +8,31 @@ export default function LandingPage() {
     <div className="bg-[var(--canvas)]">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30" style={{ background: 'conic-gradient(from 160deg at 50% -10%, #0f172a00 0deg, #6366f1 60deg, #a78bfa 120deg, #c084fc 180deg, #e879f9 240deg, #0f172a00 360deg)' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 100%, rgba(99,102,241,0.08), transparent 60%)' }} />
+        {/* Minimal Studio Background Gradient */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(0, 0, 0, 0.07) 0%, transparent 75%), radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.03) 0%, transparent 50%)'
+          }}
+        />
+        
+        {/* Subtle Grid Dot Matrix Pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px)',
+            backgroundSize: '24px 24px'
+          }}
+        />
+
         <div className="relative max-w-[1400px] mx-auto px-6 pt-24 pb-32 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--canvas-soft)] border border-[var(--hairline)] text-xs text-[var(--body)] font-mono mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--link)]" />
-            Pay-as-you-go pricing
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--canvas-soft)] border border-[var(--hairline)] text-xs text-[var(--body)] font-mono shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--link)] animate-pulse" />
+              Pay-as-you-go pricing
+            </div>
           </div>
+
           <h1 className="text-[clamp(32px,5vw,48px)] font-semibold tracking-[-2.4px] leading-[1] mb-4 max-w-3xl mx-auto">
             Stop designing store assets.<br />Start shipping your app.
           </h1>

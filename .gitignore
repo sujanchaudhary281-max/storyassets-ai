@@ -41,3 +41,17 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# documentation and prompts
+app_improve_prompt.txt
+CHANGES_SUMMARY.md
+CONFIGURATION_GUIDE.md
+FINAL_SUMMARY.md
+PRODUCT.md
+REFACTORING_STATUS.md
+REMAINING_TASKS_GUIDE.md
+CLAUDE.md
+*.prompt.txt
+*_SUMMARY.md
+*_GUIDE.md
+

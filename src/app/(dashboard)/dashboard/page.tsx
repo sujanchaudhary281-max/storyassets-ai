@@ -33,7 +33,6 @@ interface DashboardStats {
 function DashboardSkeleton() {
   return (
     <div>
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="shadow-[var(--shadow-sm)]">
@@ -48,22 +47,18 @@ function DashboardSkeleton() {
         ))}
       </div>
 
-      {/* Recent Projects Title */}
       <Skeleton className="h-5 w-32 mb-4" />
 
-      {/* Search and Filters */}
       <div className="flex gap-3 mb-6">
         <Skeleton className="h-10 flex-1 rounded-[var(--radius-sm)]" />
         <Skeleton className="h-10 w-32 rounded-[var(--radius-sm)]" />
         <Skeleton className="h-10 w-32 rounded-[var(--radius-sm)]" />
       </div>
 
-      {/* Results Count */}
       <div className="flex items-center justify-between mb-4">
         <Skeleton className="h-4 w-48" />
       </div>
 
-      {/* Projects Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <Card key={i} className="shadow-[var(--shadow-sm)]">
@@ -123,10 +118,10 @@ export default function DashboardPage() {
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      project.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === 'all' || project.category === categoryFilter
     const matchesPlatform = platformFilter === 'all' || project.platforms.includes(platformFilter)
-    
+
     return matchesSearch && matchesCategory && matchesPlatform
   })
 
@@ -200,8 +195,7 @@ export default function DashboardPage() {
       ) : (
         <div>
           <h2 className="text-base font-medium mb-4">Recent Projects</h2>
-          
-          {/* Search and Filters */}
+
           <div className="flex gap-3 mb-6">
             <div className="relative flex-1">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--mute)]" />
@@ -235,7 +229,6 @@ export default function DashboardPage() {
             </select>
           </div>
 
-          {/* Active Filters */}
           {(searchQuery || categoryFilter !== 'all' || platformFilter !== 'all') && (
             <div className="flex items-center gap-2 mb-4">
               <span className="text-sm text-[var(--mute)]">Active filters:</span>

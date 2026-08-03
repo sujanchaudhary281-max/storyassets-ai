@@ -51,7 +51,7 @@ export function Navbar() {
           ) : (
             <div className="flex gap-2 pt-2">
               <Button variant="outline" asChild size="sm"><Link href="/login">Log in</Link></Button>
-              <Button asChild size="sm"><Link href="/signup">Get Started</Link></Button>
+              <Button asChild size="sm" className='cursor-pointer rounded-md'><Link href="/signup">Get Started</Link></Button>
             </div>
           )}
         </div>

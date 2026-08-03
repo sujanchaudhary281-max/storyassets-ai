@@ -11,7 +11,7 @@ import { loginSchema } from '@/lib/validations'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Wrench } from 'lucide-react'
+import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react'
 
 type FormData = z.infer<typeof loginSchema>
 
@@ -26,37 +26,51 @@ export default function LoginPage() {
 function LoginForm() {
   const params = useSearchParams()
   const verified = params.get('verified') === 'true'
+  const googleNotRegistered = params.get('error') === 'GoogleNotRegistered'
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(loginSchema),
   })
 
-  async function onSubmit(_data: FormData) {
-    setError('System is currently under maintenance. Login is temporarily unavailable as setup is not yet completed.')
+  async function onSubmit(data: FormData) {
+    setError('')
+    const result = await signIn('credentials', {
+      redirect: false,
+      email: data.email,
+      password: data.password,
+    })
+    if (result?.error) setError('Invalid email or password.')
+    else window.location.href = '/dashboard'
   }
 
   function handleGoogleAuth() {
-    setError('System is currently under maintenance. Google login is temporarily unavailable as setup is not yet completed.')
+    signIn('google', { callbackUrl: '/dashboard' })
   }
 
   return (
     <div className="w-full max-w-sm">
-      <div className="mb-8">
+      <div className="flex items-center justify-between mb-8">
         <Link href="/" className="text-lg font-semibold tracking-[-0.6px]">StoreAssets AI</Link>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--body)] hover:text-[var(--ink)] transition-colors"
+        >
+          <ArrowLeft size={15} />
+          Back
+        </Link>
       </div>
 
-      <div className="bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-sm p-4 rounded-[var(--radius-sm)] mb-6 flex items-start gap-3">
-        <Wrench className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-        <div>
-          <p className="font-semibold text-amber-800 dark:text-amber-200 mb-0.5">System Under Maintenance</p>
-          <p className="text-xs text-amber-700/90 dark:text-amber-300/90 leading-relaxed">
-            Authentication services are currently under maintenance as feature setup is still in progress.
-          </p>
-        </div>
-      </div>
 
       <h1 className="text-2xl font-semibold tracking-[-0.96px] mb-2">Welcome back</h1>
       <p className="text-sm text-[var(--body)] mb-6">Log in to your account</p>
+
+      {googleNotRegistered && (
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-sm p-3 rounded-[var(--radius-sm)] mb-4">
+          No account found for that Google address.{' '}
+          <Link href="/signup" className="font-medium underline underline-offset-2">Sign up first</Link>.
+        </div>
+      )}
 
       {verified && (
         <div className="bg-[#d3e5ff] text-[var(--link-deep)] text-sm p-3 rounded-[var(--radius-sm)] mb-4">
@@ -85,7 +99,17 @@ function LoginForm() {
             <Label htmlFor="password" className="text-sm">Password</Label>
             <Link href="/login?forgot=true" className="text-xs text-[var(--link)] hover:underline">Forgot password?</Link>
           </div>
-          <Input id="password" type="password" {...register('password')} className="mt-1 h-10 rounded-[var(--radius-sm)]" placeholder="••••••••" />
+          <div className="relative mt-1">
+            <Input id="password" type={showPassword ? 'text' : 'password'} {...register('password')} className="h-10 rounded-[var(--radius-sm)] pr-10" placeholder="••••••••" />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--mute)] hover:text-[var(--ink)] transition-colors focus:outline-none"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
           {errors.password && <p className="text-xs text-[var(--error)] mt-1">{errors.password.message}</p>}
         </div>
 

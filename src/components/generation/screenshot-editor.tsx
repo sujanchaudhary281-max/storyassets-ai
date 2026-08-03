@@ -26,35 +26,35 @@ interface Props {
 export function ScreenshotEditor({ asset, projectId }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [saving, setSaving] = useState(false)
-  
+
   // Initial state
   const initialState: EditorState = {
-    background: { 
-      type: 'color', 
+    background: {
+      type: 'color',
       value: asset.job.project.brandColor ?? (
-        asset.job.project.stylePreset === 'dark' ? '#171717' : 
-        asset.job.project.stylePreset === 'gradient' ? '#007cf0' : 
-        asset.job.project.stylePreset === 'vibrant' ? '#ff0080' : '#f5f5f5'
+        asset.job.project.stylePreset === 'dark' ? '#171717' :
+          asset.job.project.stylePreset === 'gradient' ? '#007cf0' :
+            asset.job.project.stylePreset === 'vibrant' ? '#ff0080' : '#f5f5f5'
       )
     },
-    headline: { 
-      text: asset.captionHeadline ?? '', 
-      fontSize: Math.round(asset.width * 0.036), 
-      color: asset.job.project.stylePreset === 'minimal' ? '#171717' : '#ffffff', 
-      y: 0.08 
+    headline: {
+      text: asset.captionHeadline ?? '',
+      fontSize: Math.round(asset.width * 0.036),
+      color: asset.job.project.stylePreset === 'minimal' ? '#171717' : '#ffffff',
+      y: 0.08
     },
-    subtext: { 
-      text: asset.captionSubtext ?? '', 
-      fontSize: Math.round(asset.width * 0.023), 
-      color: asset.job.project.stylePreset === 'minimal' ? '#171717' : '#ffffff', 
-      y: 0.12 
+    subtext: {
+      text: asset.captionSubtext ?? '',
+      fontSize: Math.round(asset.width * 0.023),
+      color: asset.job.project.stylePreset === 'minimal' ? '#171717' : '#ffffff',
+      y: 0.12
     },
     deviceFrame: { visible: true, color: '#00000020', radius: 24 },
     uiImage: { offsetX: 0, offsetY: 0, scale: 1 },
   }
-  
+
   const [state, setState] = useState<EditorState>(initialState)
-  
+
   // History management
   const [history, setHistory] = useState<EditorState[]>([initialState])
   const [historyIndex, setHistoryIndex] = useState(0)
@@ -63,7 +63,7 @@ export function ScreenshotEditor({ asset, projectId }: Props) {
   const updateState = useCallback((newState: EditorState | ((prev: EditorState) => EditorState)) => {
     setState(prevState => {
       const nextState = typeof newState === 'function' ? newState(prevState) : newState
-      
+
       // Only add to history if state actually changed
       const stateChanged = JSON.stringify(prevState) !== JSON.stringify(nextState)
       if (stateChanged) {
@@ -82,7 +82,7 @@ export function ScreenshotEditor({ asset, projectId }: Props) {
           return newHistory
         })
       }
-      
+
       return nextState
     })
   }, [historyIndex])
@@ -190,12 +190,12 @@ export function ScreenshotEditor({ asset, projectId }: Props) {
         method: 'POST',
         body: formData,
       })
-      
+
       if (!res.ok) {
         const json = await res.json()
         throw new Error(json.error || 'Save failed')
       }
-      
+
       toast.success('Screenshot saved', 'Your changes have been saved successfully.')
     } catch (err) {
       console.error('Save error:', err)
@@ -228,20 +228,20 @@ export function ScreenshotEditor({ asset, projectId }: Props) {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Layers</h2>
           <div className="flex gap-1">
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={undo} 
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={undo}
               disabled={historyIndex === 0}
               title="Undo (Ctrl+Z)"
               className="h-8 w-8 p-0"
             >
               <Undo2 size={14} />
             </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={redo} 
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={redo}
               disabled={historyIndex === history.length - 1}
               title="Redo (Ctrl+Y)"
               className="h-8 w-8 p-0"
@@ -381,12 +381,12 @@ function RegenerateButton({ projectId, assetId }: { projectId: string; assetId: 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instruction: instruction || undefined }),
       })
-      
+
       if (!res.ok) {
         const json = await res.json()
         throw new Error(json.error || 'Regeneration failed')
       }
-      
+
       toast.success('Regenerating...', 'Your screenshot is being regenerated.')
       setTimeout(() => window.location.reload(), 1500)
     } catch (error) {

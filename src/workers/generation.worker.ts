@@ -79,8 +79,8 @@ async function processGenerationJob(job: Job<JobPayload>) {
 
   const user = await prisma.user.findUnique({ where: { id: userId } })
   if (user) {
-    await sendJobCompleteEmail(user.email, project.name, jobId).catch(() => {})
-    if (user.creditBalance <= 2) await sendLowCreditEmail(user.email, user.creditBalance).catch(() => {})
+    await sendJobCompleteEmail(user.email, project.name, jobId).catch(() => { })
+    if (user.creditBalance <= 2) await sendLowCreditEmail(user.email, user.creditBalance).catch(() => { })
   }
 }
 

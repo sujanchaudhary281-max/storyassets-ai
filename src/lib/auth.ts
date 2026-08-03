@@ -32,9 +32,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ account }) {
+      // Allow all Google sign-ins — new users are auto-created by PrismaAdapter,
+      // existing users are simply signed in. No intent-cookie guard needed.
+      if (account?.provider === 'google') return true
+      return true
+    },
     async jwt({ token, user, trigger }) {
       if (user) token.userId = user.id
-      if (trigger === 'signIn' || trigger === 'update') {
+      // Always hydrate creditBalance if it's missing (e.g. first login of a new account)
+      if (trigger === 'signIn' || trigger === 'update' || token.creditBalance === undefined) {
         const dbUser = await prisma.user.findUnique({ where: { id: token.userId as string } })
         if (dbUser) token.creditBalance = dbUser.creditBalance
       }

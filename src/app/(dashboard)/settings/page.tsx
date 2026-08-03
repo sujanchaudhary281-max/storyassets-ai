@@ -34,15 +34,13 @@ export default function SettingsPage() {
 
   async function handleImageUpload(file: File) {
     if (!file) return
-    
-    // Validate file type
+
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       toast.error('Invalid file type', 'Only PNG, JPEG, and WebP are allowed.')
       return
     }
-    
-    // Validate file size (5MB)
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error('File too large', 'Maximum size is 5MB.')
       return
@@ -52,21 +50,21 @@ export default function SettingsPage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      
+
       const res = await fetch('/api/user/profile/image', {
         method: 'POST',
         body: formData,
       })
-      
+
       const json = await res.json()
-      
+
       if (!res.ok) {
         throw new Error(json.error || 'Upload failed')
       }
-      
+
       if (json.data?.url) {
         setImage(json.data.url)
-        await update() // Update session
+        await update()
         toast.success('Profile image updated', 'Your profile picture has been updated successfully.')
       }
     } catch (error) {
@@ -80,17 +78,17 @@ export default function SettingsPage() {
   async function handleSave() {
     setSaving(true)
     try {
-      const res = await fetch('/api/user/me', { 
-        method: 'PATCH', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ name, role }) 
+      const res = await fetch('/api/user/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, role })
       })
-      
+
       if (!res.ok) {
         const json = await res.json()
         throw new Error(json.error || 'Failed to save changes')
       }
-      
+
       await update()
       toast.success('Settings saved', 'Your profile has been updated successfully.')
     } catch (error) {
@@ -106,7 +104,6 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-semibold tracking-[-0.96px] mb-8">Settings</h1>
 
       <div className="space-y-6">
-        {/* Profile */}
         <Card className="shadow-[var(--shadow-sm)]">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -115,7 +112,6 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Avatar upload */}
             <div className="flex items-center gap-4 mb-6">
               <div className="relative group">
                 <Avatar className="h-16 w-16">
@@ -171,7 +167,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Security */}
         <Card className="shadow-[var(--shadow-sm)]">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -198,7 +193,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Notifications */}
         <Card className="shadow-[var(--shadow-sm)]">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -224,7 +218,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Danger Zone */}
         <Card className="shadow-[var(--shadow-sm)] border-[var(--error)]">
           <CardHeader>
             <div className="flex items-center gap-2">

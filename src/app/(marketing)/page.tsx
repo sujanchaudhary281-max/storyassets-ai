@@ -6,17 +6,11 @@ import { Check, ArrowRight, Smartphone, Type, Download, Zap } from 'lucide-react
 export default function LandingPage() {
   return (
     <div className="bg-[var(--canvas)]">
-      {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* Minimal Studio Background Gradient */}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(0, 0, 0, 0.07) 0%, transparent 75%), radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.03) 0%, transparent 50%)'
-          }}
         />
-        
-        {/* Subtle Grid Dot Matrix Pattern */}
+
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -48,27 +42,26 @@ export default function LandingPage() {
             </Button>
           </div>
 
-          {/* Hero mockup */}
-          <div className="mt-16 max-w-4xl mx-auto">
-            <div className="relative bg-[var(--ink)] rounded-[var(--radius-xl)] p-6 shadow-[var(--shadow-xl)]">
-              <div className="flex gap-1.5 mb-4">
-                <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-                <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-                <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+        </div>
+      </section>
+
+      <section className="my-16 overflow-hidden w-full">
+
+        <div className="marquee-track overflow-hidden cursor-pointer">
+          <div className="flex gap-4 animate-marquee max-w-[1400px]">
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                style={{ width: 'calc((100vw - 4 * 1rem) / 7)' }}
+                className="aspect-[9/16] flex-shrink-0 rounded-[var(--radius-lg)] bg-gradient-to-b from-[#1a1a2e] to-[#16213e] flex items-center justify-center transition-transform duration-200 hover:scale-[1.03] shadow-[var(--shadow-xl)]"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#007cf0] to-[#00dfd8] opacity-60" />
               </div>
-              <div className="grid grid-cols-5 gap-3">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="aspect-[9/16] rounded-[var(--radius-sm)] bg-gradient-to-b from-[#1a1a2e] to-[#16213e] flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#007cf0] to-[#00dfd8] opacity-60" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
       <section id="how-it-works" className="bg-[var(--canvas-soft)] py-24">
         <div className="max-w-[1400px] mx-auto px-6">
           <p className="font-mono text-xs uppercase text-[var(--mute)] text-center mb-3">How it works</p>
@@ -82,7 +75,6 @@ export default function LandingPage() {
             ].map(({ step, title, desc }) => (
               <Card key={step} className="shadow-[var(--shadow-md)] border-0 bg-[var(--canvas)]">
                 <CardContent className="p-6">
-                  <p className="font-mono text-xs text-[var(--mute)] mb-3">{step}</p>
                   <h3 className="text-lg font-semibold tracking-[-0.6px] mb-2">{title}</h3>
                   <p className="text-sm text-[var(--body)] leading-relaxed">{desc}</p>
                 </CardContent>
@@ -92,7 +84,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* What you get */}
       <section className="py-24">
         <div className="max-w-[1400px] mx-auto px-6">
           <p className="font-mono text-xs uppercase text-[var(--mute)] text-center mb-3">What you get</p>
@@ -119,7 +110,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social proof placeholder */}
       <section className="bg-[var(--canvas-soft)] py-24">
         <div className="max-w-[1400px] mx-auto px-6 text-center">
           <p className="font-mono text-xs uppercase text-[var(--mute)] mb-3">Early access</p>
@@ -147,7 +137,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
       <section className="py-24">
         <div className="max-w-[1400px] mx-auto px-6 text-center">
           <p className="font-mono text-xs uppercase text-[var(--mute)] mb-3">Pricing</p>
@@ -183,7 +172,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ */}
       <section id="faq" className="bg-[var(--canvas-soft)] py-24">
         <div className="max-w-2xl mx-auto px-6">
           <h2 className="text-[32px] font-semibold tracking-[-1.28px] text-center mb-12">FAQ</h2>
@@ -204,7 +192,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="py-24 text-center">
         <div className="max-w-[1400px] mx-auto px-6">
           <h2 className="text-[32px] font-semibold tracking-[-1.28px] mb-4">Your first app asset is 90 seconds away.</h2>

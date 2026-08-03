@@ -83,15 +83,15 @@ export default function ActivityPage() {
   const filteredActivities = activities.filter(activity => {
     const matchesSearch = !searchQuery ||
       (activity.project?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       activity.action.toLowerCase().includes(searchQuery.toLowerCase()))
-    
+        activity.action.toLowerCase().includes(searchQuery.toLowerCase()))
+
     const matchesAction = actionFilter === 'all' || activity.action === actionFilter
-    
+
     let matchesDate = true
     if (dateFilter !== 'all') {
       const activityDate = new Date(activity.createdAt)
       const now = new Date()
-      
+
       if (dateFilter === 'today') {
         matchesDate = activityDate.toDateString() === now.toDateString()
       } else if (dateFilter === 'week') {
@@ -102,7 +102,7 @@ export default function ActivityPage() {
         matchesDate = activityDate >= monthAgo
       }
     }
-    
+
     return matchesSearch && matchesAction && matchesDate
   })
 
@@ -115,7 +115,6 @@ export default function ActivityPage() {
         <p className="text-sm text-[var(--body)] mt-1">View all your actions and changes</p>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--mute)]" />
@@ -126,7 +125,7 @@ export default function ActivityPage() {
             className="pl-10 rounded-[var(--radius-sm)]"
           />
         </div>
-        
+
         <select
           value={actionFilter}
           onChange={(e) => setActionFilter(e.target.value)}
@@ -139,7 +138,7 @@ export default function ActivityPage() {
             </option>
           ))}
         </select>
-        
+
         <select
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
@@ -152,7 +151,6 @@ export default function ActivityPage() {
         </select>
       </div>
 
-      {/* Active Filters */}
       {(searchQuery || actionFilter !== 'all' || dateFilter !== 'all') && (
         <div className="flex items-center gap-2 mb-4">
           <span className="text-sm text-[var(--mute)]">Filters:</span>
@@ -176,7 +174,6 @@ export default function ActivityPage() {
         Showing {filteredActivities.length} of {activities.length} activities
       </div>
 
-      {/* Activities List */}
       {loading ? (
         <ActivitySkeleton />
       ) : filteredActivities.length === 0 ? (
@@ -200,14 +197,14 @@ export default function ActivityPage() {
                         <span className="text-sm font-medium">{activity.project.name}</span>
                       )}
                     </div>
-                    
+
                     {activity.metadata && Object.keys(activity.metadata).length > 0 && (
                       <p className="text-xs text-[var(--mute)] mt-1">
                         {JSON.stringify(activity.metadata, null, 2)}
                       </p>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center gap-1 text-xs text-[var(--mute)]">
                     <Calendar size={12} />
                     {new Date(activity.createdAt).toLocaleString()}

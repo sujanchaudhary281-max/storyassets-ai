@@ -30,7 +30,7 @@ export function GenerateButton({ projectId }: { projectId: string }) {
     }
 
     setLoading(true)
-    toast.info('Generating assets', 'This may take up to 90 seconds...')
+    toast.info('Starting generation...', 'Redirecting to live progress screen...')
     
     try {
       const res = await fetch(`/api/projects/${projectId}/generate`, { method: 'POST' })
@@ -38,24 +38,7 @@ export function GenerateButton({ projectId }: { projectId: string }) {
       if (!res.ok) throw new Error(json.error)
 
       const jobId = json.data.jobId
-      // Poll until complete
-      const poll = async () => {
-        for (let i = 0; i < 60; i++) {
-          await new Promise(r => setTimeout(r, 2000))
-          const r = await fetch(`/api/jobs/${jobId}`)
-          const j = await r.json()
-          if (j.data?.job?.status === 'completed') {
-            toast.success('Assets generated!', 'Your store assets are ready.')
-            router.push(`/projects/${projectId}`)
-            return
-          }
-          if (j.data?.job?.status === 'failed') {
-            throw new Error(j.data.job.errorMessage ?? 'Generation failed')
-          }
-        }
-        throw new Error('Generation timed out')
-      }
-      await poll()
+      router.push(`/projects/${projectId}/generate?jobId=${jobId}`)
     } catch (err) {
       console.error('Generation error:', err)
       toast.error('Generation failed', err instanceof Error ? err.message : 'Failed to generate assets')

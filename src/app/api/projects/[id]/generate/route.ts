@@ -18,7 +18,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
     }
-    
+
     // Allow admin users to bypass credit checks
     const isAdmin = user.role === 'admin'
     if (!isAdmin && user.creditBalance < 1) {
@@ -36,19 +36,19 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const transactionOps: any[] = [
       prisma.generationJob.create({ data: { projectId: id, userId: session.user.id, status: 'processing', startedAt: new Date() } }),
     ]
-    
+
     if (!isAdmin) {
       transactionOps.push(
         prisma.user.update({ where: { id: session.user.id }, data: { creditBalance: { decrement: 1 } } })
       )
     }
-    
+
     const [job] = await prisma.$transaction(transactionOps) as any
 
     // Process inline
     processJob(job.id, id, project).catch(async (err) => {
       console.error('Generation failed:', err)
-      await prisma.generationJob.update({ where: { id: job.id }, data: { status: 'failed', errorMessage: String(err?.message ?? err) } }).catch(() => {})
+      await prisma.generationJob.update({ where: { id: job.id }, data: { status: 'failed', errorMessage: String(err?.message ?? err) } }).catch(() => { })
     })
 
     return NextResponse.json({ success: true, data: { jobId: job.id } }, { status: 201 })
@@ -84,7 +84,7 @@ async function processJob(jobId: string, projectId: string, project: any) {
     textColor = stylePreset === 'minimal' ? '#171717' : '#ffffff'
   }
 
-  const screenshotCount = 3
+  const screenshotCount = 8
 
   const captions = Array.from({ length: screenshotCount }, (_, i) => ({
     headline: `${appName} Feature ${i + 1}`,

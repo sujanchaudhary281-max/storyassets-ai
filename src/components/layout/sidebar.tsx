@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
@@ -18,8 +19,25 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const credits = session?.user?.creditBalance
-  const creditsLoaded = status === 'authenticated' && credits !== undefined
+  const [credits, setCredits] = useState<number | null>(session?.user?.creditBalance ?? null)
+  const [loading, setLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetch('/api/user/credits')
+        .then(r => r.json())
+        .then(json => {
+          if (json.data?.credits !== undefined) {
+            setCredits(json.data.credits)
+          }
+        })
+        .catch(err => console.error('Failed to fetch credits:', err))
+        .finally(() => setLoading(false))
+    }
+  }, [status, pathname])
+
+  const currentCredits = credits ?? session?.user?.creditBalance ?? 0
+  const creditsLoaded = !loading || (status === 'authenticated' && credits !== null)
 
   return (
     <aside className="hidden md:flex flex-col w-60 border-r border-[var(--hairline)] bg-[var(--canvas)] h-screen sticky top-0">
@@ -41,8 +59,8 @@ export function Sidebar() {
 
       <div className="p-3 border-t border-[var(--hairline)]">
         {creditsLoaded ? (
-          <div className={`px-3 py-2 rounded-[var(--radius-pill)] text-xs font-medium text-center mb-3 ${credits > 5 ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300' : credits > 1 ? 'bg-[var(--warning-soft)] text-[var(--warning-deep)]' : 'bg-[var(--error-soft)] text-[var(--error)]'}`}>
-            {credits} credit{credits !== 1 ? 's' : ''} remaining
+          <div className={`px-3 py-2 rounded-[var(--radius-pill)] text-xs font-medium text-center mb-3 ${currentCredits > 5 ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300' : currentCredits > 1 ? 'bg-[var(--warning-soft)] text-[var(--warning-deep)]' : 'bg-[var(--error-soft)] text-[var(--error)]'}`}>
+            {currentCredits} credit{currentCredits !== 1 ? 's' : ''} remaining
           </div>
         ) : (
           <div className="px-3 py-2 rounded-[var(--radius-pill)] text-xs font-medium text-center mb-3 bg-[var(--canvas-soft)] text-[var(--mute)] animate-pulse">

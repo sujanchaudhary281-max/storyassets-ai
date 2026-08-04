@@ -38,7 +38,7 @@ function NewProjectPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const draftId = searchParams.get('from')
-  
+
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [screenshots, setScreenshots] = useState<string[]>([])
@@ -83,10 +83,12 @@ function NewProjectPageContent() {
   }, [])
 
   // Auto-save draft every 10 seconds
-  useEffect(() => {
-    const formData = watch()
-    const hasData = formData.name || formData.description
+  // NOTE: Use individual watched values as deps, NOT watch() which returns a new object every render
+  const watchedName = watch('name')
+  const watchedDescription = watch('description')
 
+  useEffect(() => {
+    const hasData = watchedName || watchedDescription
     if (!hasData) return
 
     const timer = setTimeout(async () => {
@@ -114,7 +116,7 @@ function NewProjectPageContent() {
     }, 10000) // 10 seconds
 
     return () => clearTimeout(timer)
-  }, [watch(), step, currentDraftId])
+  }, [watchedName, watchedDescription, step, currentDraftId])
 
   const groups = getLocalesByGroup()
 
@@ -152,7 +154,7 @@ function NewProjectPageContent() {
       setUploadingIcon(true)
       const formData = new FormData()
       formData.append('file', file)
-
+      console.log([...formData], "Hahahah")
       const res = await fetch('/api/upload/icon', {
         method: 'POST',
         body: formData,
@@ -213,7 +215,7 @@ function NewProjectPageContent() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={(e) => e.preventDefault()}>
         {/* Step 1: App Info */}
         {step === 1 && (
           <div className="space-y-4">
@@ -236,6 +238,7 @@ function NewProjectPageContent() {
                 <option value="9+">9+</option>
                 <option value="12+">12+</option>
                 <option value="17+">17+</option>
+                <option value="25+">25+</option>
               </select>
               {errors.ageGroup && <p className="text-xs text-[var(--error)] mt-1">{errors.ageGroup.message}</p>}
             </div>
@@ -250,10 +253,10 @@ function NewProjectPageContent() {
             <div>
               <Label className="text-sm">App Icon (optional, recommended)</Label>
               <p className="text-xs text-[var(--body)] mb-2">Upload your app icon for better branded screenshots</p>
-              <Input 
-                type="file" 
-                accept="image/png,image/jpeg" 
-                className="mt-1 h-10 rounded-[var(--radius-sm)]" 
+              <Input
+                type="file"
+                accept="image/png,image/jpeg"
+                className="mt-1 h-10 rounded-[var(--radius-sm)]"
                 onChange={handleIconUpload}
                 disabled={uploadingIcon}
               />
@@ -427,7 +430,7 @@ function NewProjectPageContent() {
                 <ArrowLeft size={16} className="mr-2" />Back
               </Button>
             ) : <div />}
-            
+
             {/* Auto-save indicator */}
             {lastSaved && (
               <span className="text-xs text-[var(--mute)]">
@@ -439,24 +442,29 @@ function NewProjectPageContent() {
           <div className="flex items-center gap-2">
             {/* Save Draft button */}
             {step < TOTAL_STEPS && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={saveDraft} 
+              <Button
+                type="button"
+                variant="outline"
+                onClick={saveDraft}
                 disabled={loading}
                 className="rounded-[var(--radius-pill)]"
               >
                 Save Draft
               </Button>
             )}
-            
+
             {step < TOTAL_STEPS ? (
               <Button type="button" onClick={nextStep} className="rounded-[var(--radius-pill)]">
                 {step === TOTAL_STEPS - 1 ? 'Review' : 'Next'}<ArrowRight size={16} className="ml-2" />
               </Button>
             ) : (
-              <Button type="submit" disabled={loading} className="rounded-[var(--radius-pill)]">
-                <Sparkles size={16} className="mr-2" />{loading ? 'Creating...' : 'Create Project'}
+              <Button
+                type="button"
+                disabled={loading}
+                onClick={handleSubmit(onSubmit)}
+                className="rounded-[var(--radius-pill)]"
+              >
+                <Sparkles size={16} className="mr-2" />{loading ? 'Generating...' : 'Generate screenshots'}
               </Button>
             )}
           </div>

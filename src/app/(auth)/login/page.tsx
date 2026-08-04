@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signIn } from 'next-auth/react'
@@ -11,9 +11,11 @@ import { loginSchema } from '@/lib/validations'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle2, KeyRound, Mail } from 'lucide-react'
 
 type FormData = z.infer<typeof loginSchema>
+
+type AuthMode = 'login' | 'forgot-email' | 'forgot-reset' | 'forgot-success'
 
 export default function LoginPage() {
   return (
@@ -27,13 +29,32 @@ function LoginForm() {
   const params = useSearchParams()
   const verified = params.get('verified') === 'true'
   const googleNotRegistered = params.get('error') === 'GoogleNotRegistered'
+
+  const [mode, setMode] = useState<AuthMode>('login')
   const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
   const [error, setError] = useState('')
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const [successMsg, setSuccessMsg] = useState('')
+
+  // State for forgot password flow
+  const [resetEmail, setResetEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [isSendingCode, setIsSendingCode] = useState(false)
+  const [isResettingPassword, setIsResettingPassword] = useState(false)
+
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(loginSchema),
   })
 
-  async function onSubmit(data: FormData) {
+  // Check URL query param for forgot=true
+  useEffect(() => {
+    if (params.get('forgot') === 'true') {
+      setMode('forgot-email')
+    }
+  }, [params])
+
+  async function onSubmitLogin(data: FormData) {
     setError('')
     const result = await signIn('credentials', {
       redirect: false,
@@ -48,6 +69,280 @@ function LoginForm() {
     signIn('google', { callbackUrl: '/dashboard' })
   }
 
+  // Step 1: Send 6-digit code to email
+  async function handleSendResetCode(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!resetEmail || !resetEmail.includes('@')) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    setIsSendingCode(true)
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail }),
+      })
+      const json = await res.json()
+
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to send verification code.')
+        return
+      }
+
+      setMode('forgot-reset')
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setIsSendingCode(false)
+    }
+  }
+
+  // Step 2: Submit 6-digit code and new password
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+
+    if (!code || code.trim().length !== 6) {
+      setError('Please enter the 6-digit verification code sent to your email.')
+      return
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      setError('Password must be at least 8 characters long.')
+      return
+    }
+
+    setIsResettingPassword(true)
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: resetEmail,
+          code: code.trim(),
+          newPassword,
+        }),
+      })
+      const json = await res.json()
+
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to reset password.')
+        return
+      }
+
+      setMode('forgot-success')
+      setSuccessMsg('Your password has been reset successfully! You can now log in with your new password.')
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setIsResettingPassword(false)
+    }
+  }
+
+  const passwordStrength = getPasswordStrength(newPassword)
+
+  // ----------------------------------------------------
+  // RENDER: FORGOT PASSWORD STEP 3 (SUCCESS)
+  // ----------------------------------------------------
+  if (mode === 'forgot-success') {
+    return (
+      <div className="w-full max-w-sm text-center">
+        <div className="w-12 h-12 rounded-full bg-[var(--success)]/10 text-[var(--success)] mx-auto mb-4 flex items-center justify-center">
+          <CheckCircle2 size={28} />
+        </div>
+        <h1 className="text-xl font-semibold tracking-[-0.6px] mb-2">Password reset successful</h1>
+        <p className="text-sm text-[var(--body)] mb-6">{successMsg}</p>
+        <Button
+          className="w-full h-10 rounded-[var(--radius-pill)] font-medium"
+          onClick={() => {
+            setValue('email', resetEmail)
+            setMode('login')
+            setError('')
+          }}
+        >
+          Back to log in
+        </Button>
+      </div>
+    )
+  }
+
+  // ----------------------------------------------------
+  // RENDER: FORGOT PASSWORD STEP 2 (ENTER CODE & NEW PASSWORD)
+  // ----------------------------------------------------
+  if (mode === 'forgot-reset') {
+    return (
+      <div className="w-full max-w-sm">
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="text-lg font-semibold tracking-[-0.6px]">StoreAssets AI</Link>
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setError('') }}
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--body)] hover:text-[var(--ink)] transition-colors"
+          >
+            <ArrowLeft size={15} />
+            Back to login
+          </button>
+        </div>
+
+        <div className="w-10 h-10 rounded-full bg-[var(--canvas-soft-2)] flex items-center justify-center mb-4 text-[var(--ink)]">
+          <KeyRound size={20} />
+        </div>
+
+        <h1 className="text-2xl font-semibold tracking-[-0.96px] mb-2">Enter verification code</h1>
+        <p className="text-sm text-[var(--body)] mb-6">
+          We sent a 6-digit code to <strong className="text-[var(--ink)]">{resetEmail}</strong>
+        </p>
+
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <div>
+            <Label htmlFor="code" className="text-sm">6-Digit Code</Label>
+            <Input
+              id="code"
+              type="text"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+              className="mt-1 h-11 rounded-[var(--radius-sm)] text-center font-mono text-lg tracking-[0.3em]"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="newPassword" className="text-sm">New Password</Label>
+            <div className="relative mt-1">
+              <Input
+                id="newPassword"
+                type={showNewPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className="h-10 rounded-[var(--radius-sm)] pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--mute)] hover:text-[var(--ink)] transition-colors focus:outline-none"
+                tabIndex={-1}
+              >
+                {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            {newPassword && (
+              <div className="flex gap-1 mt-2">
+                {[1, 2, 3, 4].map(i => (
+                  <div
+                    key={i}
+                    className="h-1 flex-1 rounded-full"
+                    style={{ background: i <= passwordStrength ? ['', '#ee0000', '#f5a623', '#0070f3', '#50e3c2'][passwordStrength] : 'var(--hairline)' }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="text-sm text-[var(--error)] bg-[var(--error-soft)] p-3 rounded-[var(--radius-sm)] border border-[var(--error)]/20">
+              {error}
+            </div>
+          )}
+
+          <Button type="submit" disabled={isResettingPassword} className="w-full h-10 rounded-[var(--radius-pill)] font-medium">
+            {isResettingPassword && <Loader2 size={16} className="mr-2 animate-spin" />}
+            {isResettingPassword ? 'Resetting password...' : 'Save new password'}
+          </Button>
+        </form>
+
+        <div className="flex justify-between items-center text-xs text-[var(--body)] mt-6">
+          <span>Didn&apos;t receive a code?</span>
+          <button
+            type="button"
+            onClick={() => { setMode('forgot-email'); setError('') }}
+            className="text-[var(--link)] hover:underline font-medium"
+          >
+            Resend code
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ----------------------------------------------------
+  // RENDER: FORGOT PASSWORD STEP 1 (ENTER EMAIL)
+  // ----------------------------------------------------
+  if (mode === 'forgot-email') {
+    return (
+      <div className="w-full max-w-sm">
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="text-lg font-semibold tracking-[-0.6px]">StoreAssets AI</Link>
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setError('') }}
+            className="inline-flex items-center gap-1.5 text-sm text-[var(--body)] hover:text-[var(--ink)] transition-colors"
+          >
+            <ArrowLeft size={15} />
+            Back to login
+          </button>
+        </div>
+
+        <div className="w-10 h-10 rounded-full bg-[var(--canvas-soft-2)] flex items-center justify-center mb-4 text-[var(--ink)]">
+          <Mail size={20} />
+        </div>
+
+        <h1 className="text-2xl font-semibold tracking-[-0.96px] mb-2">Reset your password</h1>
+        <p className="text-sm text-[var(--body)] mb-6">
+          Enter your account email address and we&apos;ll send you a 6-digit verification code.
+        </p>
+
+        <form onSubmit={handleSendResetCode} className="space-y-4">
+          <div>
+            <Label htmlFor="resetEmail" className="text-sm">Email address</Label>
+            <Input
+              id="resetEmail"
+              type="email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="mt-1 h-10 rounded-[var(--radius-sm)]"
+              required
+              autoFocus
+            />
+          </div>
+
+          {error && (
+            <div className="text-sm text-[var(--error)] bg-[var(--error-soft)] p-3 rounded-[var(--radius-sm)] border border-[var(--error)]/20">
+              {error}
+            </div>
+          )}
+
+          <Button type="submit" disabled={isSendingCode} className="w-full h-10 rounded-[var(--radius-pill)] font-medium">
+            {isSendingCode && <Loader2 size={16} className="mr-2 animate-spin" />}
+            {isSendingCode ? 'Sending code...' : 'Send verification code'}
+          </Button>
+        </form>
+
+        <p className="text-sm text-[var(--body)] text-center mt-6">
+          Remember your password?{' '}
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setError('') }}
+            className="text-[var(--link)] hover:underline font-medium"
+          >
+            Log in
+          </button>
+        </p>
+      </div>
+    )
+  }
+
+  // ----------------------------------------------------
+  // RENDER: DEFAULT LOGIN FORM
+  // ----------------------------------------------------
   return (
     <div className="w-full max-w-sm">
       <div className="flex items-center justify-between mb-8">
@@ -60,7 +355,6 @@ function LoginForm() {
           Back
         </Link>
       </div>
-
 
       <h1 className="text-2xl font-semibold tracking-[-0.96px] mb-2">Welcome back</h1>
       <p className="text-sm text-[var(--body)] mb-6">Log in to your account</p>
@@ -88,7 +382,7 @@ function LoginForm() {
         <div className="relative flex justify-center text-xs"><span className="bg-[var(--canvas-soft)] px-2 text-[var(--mute)]">or</span></div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmitLogin)} className="space-y-4">
         <div>
           <Label htmlFor="email" className="text-sm">Email</Label>
           <Input id="email" type="email" {...register('email')} className="mt-1 h-10 rounded-[var(--radius-sm)]" placeholder="you@example.com" />
@@ -97,7 +391,13 @@ function LoginForm() {
         <div>
           <div className="flex justify-between items-center">
             <Label htmlFor="password" className="text-sm">Password</Label>
-            <Link href="/login?forgot=true" className="text-xs text-[var(--link)] hover:underline">Forgot password?</Link>
+            <button
+              type="button"
+              onClick={() => { setMode('forgot-email'); setError('') }}
+              className="text-xs text-[var(--link)] hover:underline font-medium"
+            >
+              Forgot password?
+            </button>
           </div>
           <div className="relative mt-1">
             <Input id="password" type={showPassword ? 'text' : 'password'} {...register('password')} className="h-10 rounded-[var(--radius-sm)] pr-10" placeholder="••••••••" />
@@ -132,3 +432,11 @@ function LoginForm() {
   )
 }
 
+function getPasswordStrength(pw: string): number {
+  let s = 0
+  if (pw.length >= 8) s++
+  if (/[A-Z]/.test(pw)) s++
+  if (/[0-9]/.test(pw)) s++
+  if (/[^A-Za-z0-9]/.test(pw)) s++
+  return s
+}

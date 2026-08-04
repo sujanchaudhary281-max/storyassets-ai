@@ -19,6 +19,24 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
   })
 }
 
+export async function sendPasswordResetCodeEmail(email: string, code: string): Promise<void> {
+  await resend.emails.send({
+    from,
+    to: email,
+    subject: 'Your StoreAssets AI password reset code',
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 20px; border: 1px solid #e4e4e7; border-radius: 12px;">
+        <h2 style="font-weight: 600; font-size: 20px; color: #111; margin-bottom: 8px;">Reset your password</h2>
+        <p style="font-size: 14px; color: #555; line-height: 1.5;">Use the 6-digit verification code below to reset your StoreAssets AI password. This code will expire in 15 minutes.</p>
+        <div style="background-color: #f4f4f5; padding: 18px; border-radius: 8px; text-align: center; margin: 20px 0;">
+          <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; font-family: monospace; color: #111;">${code}</span>
+        </div>
+        <p style="font-size: 12px; color: #888; margin-top: 16px;">If you did not request a password reset, you can safely ignore this email.</p>
+      </div>
+    `,
+  })
+}
+
 export async function sendJobCompleteEmail(email: string, projectName: string, jobId: string): Promise<void> {
   const url = `${process.env.NEXT_PUBLIC_APP_URL}/projects/${jobId}/results`
   await resend.emails.send({

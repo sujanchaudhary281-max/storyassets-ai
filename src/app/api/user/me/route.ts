@@ -35,3 +35,22 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function DELETE() {
+  try {
+    const session = await auth()
+    if (!session) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+
+    const userId = session.user.id
+
+    // Subscription has onDelete: Restrict — must be removed before deleting the user
+    await prisma.subscription.deleteMany({ where: { userId } })
+
+    // Deleting the user cascades to all other related models
+    await prisma.user.delete({ where: { id: userId } })
+
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ success: false, error: 'Failed to delete account' }, { status: 500 })
+  }
+}

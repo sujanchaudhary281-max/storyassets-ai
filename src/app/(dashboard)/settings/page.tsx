@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [image, setImage] = useState(session?.user?.image ?? '')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -96,6 +97,31 @@ export default function SettingsPage() {
       toast.error('Save failed', error instanceof Error ? error.message : 'Failed to save changes')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      'Are you sure you want to permanently delete your account?\n\nThis will delete all your projects, assets, and data. This action cannot be undone.'
+    )
+    if (!confirmed) return
+
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/user/me', { method: 'DELETE' })
+      const json = await res.json()
+
+      if (!res.ok) {
+        throw new Error(json.error || 'Failed to delete account')
+      }
+
+      toast.success('Account deleted', 'Your account has been permanently deleted.')
+      await signOut({ callbackUrl: '/' })
+    } catch (error) {
+      console.error('Delete account error:', error)
+      toast.error('Delete failed', error instanceof Error ? error.message : 'Failed to delete account')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -227,7 +253,14 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-[var(--body)] mb-4">Permanently delete your account and all associated data. This cannot be undone.</p>
-            <Button variant="destructive" className="rounded-[var(--radius-pill)]">Delete Account</Button>
+            <Button
+              variant="destructive"
+              className="rounded-[var(--radius-pill)]"
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete Account'}
+            </Button>
           </CardContent>
         </Card>
       </div>
